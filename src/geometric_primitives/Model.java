@@ -12,4 +12,12 @@ public class Model {
         this.vn = vn;
         this.faces = faces;
     }
+
+    public Face[] getFaces() {
+        return faces;
+    }
+
+    public PointDouble getV(int vidx) {
+        return v[vidx];
+    }
 }

@@ -4,7 +4,6 @@ import geometric_primitives.Face;
 import geometric_primitives.Model;
 import geometric_primitives.PointDouble;
 
-import java.awt.*;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -24,7 +23,7 @@ public class ObjectReader {
     }
 
     public PointDouble[] readVDouble() throws IOException {
-        List<PointDouble> points = new ArrayList<>();
+        List<PointDouble> points = new ArrayList<PointDouble>();
         String sPoint = in.readLine();
         while (sPoint.charAt(0) == 'v') {
             StringTokenizer tok = new StringTokenizer(sPoint, SEPARATORS);
@@ -35,7 +34,8 @@ public class ObjectReader {
             points.add(point);
             sPoint = in.readLine();
         }
-        return (PointDouble[]) points.toArray();
+        PointDouble[] res = new PointDouble[points.size()];
+        return points.toArray(res);
     }
 
     public PointDouble[] readVtDouble() throws IOException {
@@ -59,7 +59,8 @@ public class ObjectReader {
             points.add(point);
             sPoint = in.readLine();
         }
-        return (PointDouble[]) points.toArray();
+        PointDouble[] res = new PointDouble[points.size()];
+        return points.toArray(res);
     }
 
     public PointDouble[] readVnDouble() throws IOException {
@@ -82,7 +83,8 @@ public class ObjectReader {
             points.add(point);
             sPoint = in.readLine();
         }
-        return (PointDouble[]) points.toArray();
+        PointDouble[] res = new PointDouble[points.size()];
+        return points.toArray(res);
     }
 
     public String readLine() throws IOException {
@@ -122,7 +124,8 @@ public class ObjectReader {
             faces.add(new Face(v, vt, vn));
             sPoint = in.readLine();
         }
-        return (Face[]) faces.toArray();
+        Face[] res = new Face[faces.size()];
+        return faces.toArray(res);
     }
 
     public Model readModel() throws IOException {
