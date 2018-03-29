@@ -1,4 +1,4 @@
-package Geometric_Pirmitive;
+package geometric_primitives;
 
 public class PointDouble {
 

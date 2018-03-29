@@ -1,8 +1,10 @@
-package GenericPrimitives;
+package utils;
 
-import Geometric_Pirmitive.PointDouble;
-import Geometric_Pirmitive.PolygonInt;
+import geometric_primitives.Face;
+import geometric_primitives.Model;
+import geometric_primitives.PointDouble;
 
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -21,7 +23,7 @@ public class ObjectReader {
         in = new BufferedReader(new FileReader(filename));
     }
 
-    public List<PointDouble> readVerticesDouble() throws IOException {
+    public PointDouble[] readVDouble() throws IOException {
         List<PointDouble> points = new ArrayList<>();
         String sPoint = in.readLine();
         while (sPoint.charAt(0) == 'v') {
@@ -33,10 +35,10 @@ public class ObjectReader {
             points.add(point);
             sPoint = in.readLine();
         }
-        return points;
+        return (PointDouble[]) points.toArray();
     }
 
-    public List<PointDouble> readVtDouble() throws IOException {
+    public PointDouble[] readVtDouble() throws IOException {
         List<PointDouble> points = new ArrayList<>();
         String sPoint = in.readLine();
         while (true) {
@@ -57,10 +59,10 @@ public class ObjectReader {
             points.add(point);
             sPoint = in.readLine();
         }
-        return points;
+        return (PointDouble[]) points.toArray();
     }
 
-    public List<PointDouble> readVnDouble() throws IOException {
+    public PointDouble[] readVnDouble() throws IOException {
         List<PointDouble> points = new ArrayList<>();
         String sPoint = in.readLine();
         while (true) {
@@ -80,32 +82,58 @@ public class ObjectReader {
             points.add(point);
             sPoint = in.readLine();
         }
-        return points;
+        return (PointDouble[]) points.toArray();
     }
 
     public String readLine() throws IOException {
         return in.readLine();
     }
 
-    public List<PolygonInt> readPolygonInt() throws IOException {
-        List<PolygonInt> polygons = new ArrayList<>();
+    public Face[] readFaces() throws IOException {
+        List<Face> faces = new ArrayList<>();
         String sPoint = in.readLine();
         while (sPoint.charAt(0) == 'f') {
             StringTokenizer tok = new StringTokenizer(sPoint, SEPARATORS);
+            int[] v = null;
+            int[] vt = null;
+            int[] vn = null;
             if (tok.countTokens() == 9) {
-                int[] x = new int[3];
-                int[] y = new int[3];
-                int[] z = new int[3];
+                v = new int[3];
+                vt = new int[3];
+                vn = new int[3];
                 for (int i = 0; i < 3; i++) {
-                    x[i] = Integer.parseInt(tok.nextToken());
-                    y[i] = Integer.parseInt(tok.nextToken());
-                    z[i] = Integer.parseInt(tok.nextToken());
+                    v[i] = Integer.parseInt(tok.nextToken());
+                    vt[i] = Integer.parseInt(tok.nextToken());
+                    vn[i] = Integer.parseInt(tok.nextToken());
                 }
-                polygons.add(new PolygonInt(x, y, z));
+            } else if (tok.countTokens() == 6) {
+                v = new int[3];
+                vt = new int[3];
+                for (int i = 0; i < 3; i++) {
+                    v[i] = Integer.parseInt(tok.nextToken());
+                    vt[i] = Integer.parseInt(tok.nextToken());
+                }
+            } else {
+                v = new int[3];
+                for (int i = 0; i < 3; i++) {
+                    v[i] = Integer.parseInt(tok.nextToken());
+                }
             }
+            faces.add(new Face(v, vt, vn));
             sPoint = in.readLine();
         }
-        return polygons;
+        return (Face[]) faces.toArray();
+    }
+
+    public Model readModel() throws IOException {
+        PointDouble[] pointsV = readVDouble();
+        PointDouble[] pointsVt = readVtDouble();
+        PointDouble[] pointsVn = readVnDouble();
+        readLine();
+        readLine();
+        readLine();
+        Face[] faces = readFaces();
+        return new Model(pointsV, pointsVt, pointsVn, faces);
     }
 
 }
