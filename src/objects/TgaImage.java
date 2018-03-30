@@ -35,11 +35,11 @@ public class TgaImage {
                 color.getRGB());
     }
 
-    public double getWidth() {
+    public int getWidth() {
         return image.getWidth();
     }
 
-    public double getHeight() {
+    public int getHeight() {
         return image.getHeight();
     }
 

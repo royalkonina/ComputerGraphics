@@ -22,11 +22,11 @@ public class Drawer {
         for (Face face : model.getFaces()) {
             for (int i = 0; i < 3; i++) {
                 PointDouble from = model.getV(face.getVidx(i));
-                int x = (int) ((from.getX()) * imageDefault.getWidth() / 2);
-                int y = (int) ((from.getY()) * imageDefault.getHeight() / 2);
+                int x = toInt(from.x, imageDefault.getWidth());
+                int y = toInt(from.y, imageDefault.getHeight());
                 PointDouble to = model.getV(face.getVidx((i + 1) % 3));
-                int x1 = (int) ((to.getX()) * imageDefault.getWidth() / 2);
-                int y1 = (int) ((to.getY()) * imageDefault.getHeight() / 2);
+                int x1 = toInt(to.x, imageDefault.getWidth());
+                int y1 = toInt(to.y, imageDefault.getHeight());
                 drawLine(x, y, x1, y1, imageDefault, Color.GREEN);
                 drawLineBresenham(x, y, x1, y1, imageBresenham, Color.GREEN);
                 drawLineWu(x, y, x1, y1, imageWu, Color.GREEN);
@@ -35,6 +35,10 @@ public class Drawer {
         outputImage(imageDefault, OUTPUT_FILENAME_DEFAULT);
         outputImage(imageBresenham, OUTPUT_FILENAME_BRESENHAM);
         outputImage(imageWu, OUTPUT_FILENAME_WU);
+    }
+
+    private static int toInt(double coordinate, int length) {
+        return (int) (coordinate * length / 2);
     }
 
     private static void outputImage(TgaImage image, String filename) throws IOException {
@@ -157,4 +161,31 @@ public class Drawer {
                 (int) (color.getBlue() * brightness));
     }
 
+    public static void drawWithBarycentric(Model model, PointDouble camera) {
+        TgaImage image = new TgaImage("Barycentric");
+        for (Face face : model.getFaces()) {
+            PointDouble p0 = model.getV(face.getVidx(0));
+            PointDouble p1 = model.getV(face.getVidx(1));
+            PointDouble p2 = model.getV(face.getVidx(2));
+            if (isBackface(p0, p1, p2, camera)) continue;
+
+            double xmin = Math.min(p0.x, Math.min(p1.x, p2.x));
+            double xmax = Math.max(p0.x, Math.min(p1.x, p2.x));
+            double ymin = Math.min(p0.y, Math.min(p1.y, p2.y));
+            double ymax = Math.max(p0.y, Math.min(p1.y, p2.y));
+            for (double x = xmin; x <= xmax; x++) {
+
+            }
+
+        }
+        outputImage(imageDefault, OUTPUT_FILENAME_DEFAULT);
+    }
+
+    private static boolean isBackface(PointDouble p0, PointDouble p1, PointDouble p2, PointDouble camera) {
+        double nx = (p2.y - p0.y) * (p1.z - p0.z) - (p2.z - p0.z) * (p1.y - p0.y);
+        double ny = -(p2.x - p0.x) * (p1.z - p0.z) + (p2.z - p0.z) * (p1.x - p0.x);
+        double nz = (p2.x - p0.x) * (p1.y - p0.y) - (p2.y - p0.y) * (p1.x - p0.x);
+
+        return nx * camera.x + ny * camera.y + nz * camera.z >= 0;
+    }
 }
