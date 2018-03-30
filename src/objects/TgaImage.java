@@ -13,7 +13,7 @@ public class TgaImage {
 
 
     public TgaImage(String name) {
-        this.name = name;
+        this.name = name + ".png";
         this.image = new BufferedImage(DEFAULT_WIDTH, DEFAULT_HEIGHT, BufferedImage.TYPE_INT_ARGB);
         Graphics graphics = image.getGraphics();
         graphics.setColor(Color.BLACK);
