@@ -9,11 +9,12 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.Random;
 
 public class Drawer {
-    private static final String OUTPUT_FILENAME_DEFAULT = "/home/egor/IdeaProjects/Com_grap_lab_1/src/input_output_files/african_head_default.png";
-    private static final String OUTPUT_FILENAME_BRESENHAM = "/home/egor/IdeaProjects/Com_grap_lab_1/src/input_output_files/african_head_bresenham.png";
-    private static final String OUTPUT_FILENAME_WU = "/home/egor/IdeaProjects/Com_grap_lab_1/src/input_output_files/african_head_wu.png";
+    private static final String OUTPUT_FILENAME = "/home/egor/IdeaProjects/Com_grap_lab_1/src/input_output_files/african_head_";
+    private static final long SEED = 5;
+
 
     public static void draw(Model model) throws IOException {
         TgaImage imageDefault = new TgaImage("Default");
@@ -22,25 +23,29 @@ public class Drawer {
         for (Face face : model.getFaces()) {
             for (int i = 0; i < 3; i++) {
                 PointDouble from = model.getV(face.getVidx(i));
-                int x = (int) ((from.getX()) * imageDefault.getWidth() / 2);
-                int y = (int) ((from.getY()) * imageDefault.getHeight() / 2);
+                int x = toInt(from.x, imageDefault.getWidth());
+                int y = toInt(from.y, imageDefault.getHeight());
                 PointDouble to = model.getV(face.getVidx((i + 1) % 3));
-                int x1 = (int) ((to.getX()) * imageDefault.getWidth() / 2);
-                int y1 = (int) ((to.getY()) * imageDefault.getHeight() / 2);
+                int x1 = toInt(to.x, imageDefault.getWidth());
+                int y1 = toInt(to.y, imageDefault.getHeight());
                 drawLine(x, y, x1, y1, imageDefault, Color.GREEN);
                 drawLineBresenham(x, y, x1, y1, imageBresenham, Color.GREEN);
                 drawLineWu(x, y, x1, y1, imageWu, Color.GREEN);
             }
         }
-        outputImage(imageDefault, OUTPUT_FILENAME_DEFAULT);
-        outputImage(imageBresenham, OUTPUT_FILENAME_BRESENHAM);
-        outputImage(imageWu, OUTPUT_FILENAME_WU);
+        outputImage(imageDefault);
+        outputImage(imageBresenham);
+        outputImage(imageWu);
     }
 
-    private static void outputImage(TgaImage image, String filename) throws IOException {
+    private static int toInt(double coordinate, int length) {
+        return (int) (coordinate * length / 2);
+    }
+
+    private static void outputImage(TgaImage image) throws IOException {
         long time = System.currentTimeMillis();
         image.flipVertically();
-        writeImageToFile(image, filename);
+        writeImageToFile(image, OUTPUT_FILENAME + image.getName());
         System.err.println(String.format("%s is drawn, time spent: %d ms", image.getName(), System.currentTimeMillis() - time));
     }
 
@@ -157,4 +162,52 @@ public class Drawer {
                 (int) (color.getBlue() * brightness));
     }
 
+    public static void drawWithBarycentric(Model model, PointDouble camera) throws IOException {
+        Random rnd = new Random(SEED);
+
+        TgaImage image = new TgaImage("Barycentric");
+        for (Face face : model.getFaces()) {
+            PointDouble p0 = model.getV(face.getVidx(0));
+            PointDouble p1 = model.getV(face.getVidx(1));
+            PointDouble p2 = model.getV(face.getVidx(2));
+            if (isBackface(p0, p1, p2, camera)) continue;
+
+            int xmin = toInt(Math.min(p0.x, Math.min(p1.x, p2.x)), image.getWidth());
+            int xmax = toInt(Math.max(p0.x, Math.max(p1.x, p2.x)), image.getWidth());
+            int ymin = toInt(Math.min(p0.y, Math.min(p1.y, p2.y)), image.getHeight());
+            int ymax = toInt(Math.max(p0.y, Math.max(p1.y, p2.y)), image.getHeight());
+
+            Color color = new Color(rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
+            for (int yIdx = ymin; yIdx <= ymax; yIdx++) {
+                double y = center(yIdx, image.getHeight());
+                for (int xIdx = xmin; xIdx < xmax; xIdx++) {
+                    double x = center(xIdx, image.getWidth());
+                    if (inTriangle(x, y, p0, p1, p2)) {
+                        image.setPixel(xIdx, yIdx, color);
+                    }
+                }
+            }
+
+        }
+        outputImage(image);
+    }
+
+    private static boolean inTriangle(double x, double y, PointDouble p0, PointDouble p1, PointDouble p2) {
+        double l0 = ((y - p2.y) * (p1.x - p2.x) - (x - p2.x) * (p1.y - p2.y)) / ((p0.y - p2.y) * (p1.x - p2.x) - (p0.x - p2.x) * (p1.y - p2.y));
+        double l1 = ((y - p0.y) * (p2.x - p0.x) - (x - p0.x) * (p2.y - p0.y)) / ((p1.y - p0.y) * (p2.x - p0.x) - (p1.x - p0.x) * (p2.y - p0.y));
+        double l2 = ((y - p1.y) * (p0.x - p1.x) - (x - p1.x) * (p0.y - p1.y)) / ((p2.y - p1.y) * (p0.x - p1.x) - (p2.x - p1.x) * (p0.y - p1.y));
+        return l0 >= 0 && l1 >= 0 && l2 >= 0;
+    }
+
+    private static double center(int idx, int length) {
+        return (idx + .5) * 2 / length;
+    }
+
+    private static boolean isBackface(PointDouble p0, PointDouble p1, PointDouble p2, PointDouble camera) {
+        double nx = (p2.y - p0.y) * (p1.z - p0.z) - (p2.z - p0.z) * (p1.y - p0.y);
+        double ny = -(p2.x - p0.x) * (p1.z - p0.z) + (p2.z - p0.z) * (p1.x - p0.x);
+        double nz = (p2.x - p0.x) * (p1.y - p0.y) - (p2.y - p0.y) * (p1.x - p0.x);
+
+        return nx * camera.x + ny * camera.y + nz * camera.z >= 0;
+    }
 }
