@@ -30,8 +30,8 @@ public class TgaImage {
     }
 
     public void setPixel(int x, int y, Color color) {
-        image.setRGB(Math.max(0, Math.min(image.getWidth() - 1, x + image.getWidth() / 2)),
-                Math.max(0, Math.min(image.getHeight() - 1, y + image.getHeight() / 2)),
+        image.setRGB(Math.max(0, Math.min(x, image.getWidth() - 1)),
+                Math.max(0, Math.min(y, image.getHeight() - 1)),
                 color.getRGB());
     }
 
