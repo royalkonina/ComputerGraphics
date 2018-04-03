@@ -13,7 +13,7 @@ public class Main {
 
         ObjectReader reader = new ObjectReader(FILENAME);
         Model model = reader.readModel();
-        Drawer.draw(model);
+        //Drawer.draw(model);
         PointDouble camera = new PointDouble(0, 0, 1);
         Drawer.drawWithBarycentric(model, camera);
     }

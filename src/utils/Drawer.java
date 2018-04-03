@@ -9,11 +9,13 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Random;
 
 public class Drawer {
     private static final String OUTPUT_FILENAME = "/home/egor/IdeaProjects/Com_grap_lab_1/src/input_output_files/african_head_";
     private static final long SEED = 5;
+    private static final double MIN_VALUE = -1e18;
 
 
     public static void draw(Model model) throws IOException {
@@ -39,7 +41,7 @@ public class Drawer {
     }
 
     private static int toInt(double coordinate, int length) {
-        return (int) (coordinate * length / 2);
+        return (int) Math.max(0, Math.min(length - 1, coordinate * length / 2 + length / 2));
     }
 
     private static void outputImage(TgaImage image) throws IOException {
@@ -166,6 +168,10 @@ public class Drawer {
         Random rnd = new Random(SEED);
 
         TgaImage image = new TgaImage("Barycentric");
+        double[][] bufferZ = new double[image.getWidth()][image.getHeight()];
+        for (int i = 0; i < bufferZ.length; i++) {
+            Arrays.fill(bufferZ[i], MIN_VALUE);
+        }
         for (Face face : model.getFaces()) {
             PointDouble p0 = model.getV(face.getVidx(0));
             PointDouble p1 = model.getV(face.getVidx(1));
@@ -182,8 +188,13 @@ public class Drawer {
                 double y = center(yIdx, image.getHeight());
                 for (int xIdx = xmin; xIdx < xmax; xIdx++) {
                     double x = center(xIdx, image.getWidth());
-                    if (inTriangle(x, y, p0, p1, p2)) {
-                        image.setPixel(xIdx, yIdx, color);
+                    double[] l = getBarysticCoordinates(x, y, p0, p1, p2);
+                    if (inTriangle(l)) {
+                        double z = p0.z * l[0] + p1.z * l[1] + p2.z * l[2];
+                        if (z > bufferZ[xIdx][yIdx]) {
+                            image.setPixel(xIdx, yIdx, color);
+                            bufferZ[xIdx][yIdx] = z;
+                        }
                     }
                 }
             }
@@ -192,15 +203,20 @@ public class Drawer {
         outputImage(image);
     }
 
-    private static boolean inTriangle(double x, double y, PointDouble p0, PointDouble p1, PointDouble p2) {
-        double l0 = ((y - p2.y) * (p1.x - p2.x) - (x - p2.x) * (p1.y - p2.y)) / ((p0.y - p2.y) * (p1.x - p2.x) - (p0.x - p2.x) * (p1.y - p2.y));
-        double l1 = ((y - p0.y) * (p2.x - p0.x) - (x - p0.x) * (p2.y - p0.y)) / ((p1.y - p0.y) * (p2.x - p0.x) - (p1.x - p0.x) * (p2.y - p0.y));
-        double l2 = ((y - p1.y) * (p0.x - p1.x) - (x - p1.x) * (p0.y - p1.y)) / ((p2.y - p1.y) * (p0.x - p1.x) - (p2.x - p1.x) * (p0.y - p1.y));
-        return l0 >= 0 && l1 >= 0 && l2 >= 0;
+    private static boolean inTriangle(double[] l) {
+        return l[0] >= 0 && l[1] >= 0 && l[2] >= 0;
+    }
+
+    private static double[] getBarysticCoordinates(double x, double y, PointDouble p0, PointDouble p1, PointDouble p2) {
+        double[] l = new double[3];
+        l[0] = ((y - p2.y) * (p1.x - p2.x) - (x - p2.x) * (p1.y - p2.y)) / ((p0.y - p2.y) * (p1.x - p2.x) - (p0.x - p2.x) * (p1.y - p2.y));
+        l[1] = ((y - p0.y) * (p2.x - p0.x) - (x - p0.x) * (p2.y - p0.y)) / ((p1.y - p0.y) * (p2.x - p0.x) - (p1.x - p0.x) * (p2.y - p0.y));
+        l[2] = ((y - p1.y) * (p0.x - p1.x) - (x - p1.x) * (p0.y - p1.y)) / ((p2.y - p1.y) * (p0.x - p1.x) - (p2.x - p1.x) * (p0.y - p1.y));
+        return l;
     }
 
     private static double center(int idx, int length) {
-        return (idx + .5) * 2 / length;
+        return (idx + .5) * 2 / length - 1;
     }
 
     private static boolean isBackface(PointDouble p0, PointDouble p1, PointDouble p2, PointDouble camera) {
