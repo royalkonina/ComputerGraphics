@@ -15,6 +15,7 @@ import java.util.Random;
 public class Drawer {
     private static final String OUTPUT_FILENAME = "/home/egor/IdeaProjects/Com_grap_lab_1/src/input_output_files/african_head_";
     private static final long SEED = 5;
+    private static final double MIN_VALUE = -1e18;
 
 
     public static void draw(Model model) throws IOException {
@@ -169,7 +170,7 @@ public class Drawer {
         TgaImage image = new TgaImage("Barycentric");
         double[][] bufferZ = new double[image.getWidth()][image.getHeight()];
         for (int i = 0; i < bufferZ.length; i++) {
-            Arrays.fill(bufferZ[i], Double.MIN_VALUE);
+            Arrays.fill(bufferZ[i], MIN_VALUE);
         }
         for (Face face : model.getFaces()) {
             PointDouble p0 = model.getV(face.getVidx(0));
