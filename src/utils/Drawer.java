@@ -16,6 +16,7 @@ public class Drawer {
     private static final String OUTPUT_FILENAME = "/home/egor/IdeaProjects/Com_grap_lab_1/src/input_output_files/african_head_";
     private static final long SEED = 5;
     private static final double MIN_VALUE = -1e18;
+    private static final double EPS = 5 * 1e-3;
 
 
     public static void draw(Model model) throws IOException {
@@ -179,10 +180,10 @@ public class Drawer {
             double lightFactor = getLightFactor(p0, p1, p2, camera);
             if (lightFactor >= 0) continue;
 
-            int xmin = toInt(Math.min(p0.x, Math.min(p1.x, p2.x)), image.getWidth());
-            int xmax = toInt(Math.max(p0.x, Math.max(p1.x, p2.x)), image.getWidth());
-            int ymin = toInt(Math.min(p0.y, Math.min(p1.y, p2.y)), image.getHeight());
-            int ymax = toInt(Math.max(p0.y, Math.max(p1.y, p2.y)), image.getHeight());
+            int xmin = toInt(Math.min(p0.x - EPS, Math.min(p1.x - EPS, p2.x - EPS)), image.getWidth());
+            int xmax = toInt(Math.max(p0.x + EPS, Math.max(p1.x + EPS, p2.x + EPS)), image.getWidth());
+            int ymin = toInt(Math.min(p0.y - EPS, Math.min(p1.y - EPS, p2.y - EPS)), image.getHeight());
+            int ymax = toInt(Math.max(p0.y + EPS, Math.max(p1.y + EPS, p2.y + EPS)), image.getHeight());
 
             //Color color = new Color(rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
             Color color = Color.LIGHT_GRAY;
