@@ -16,6 +16,7 @@ public class Drawer {
     private static final String OUTPUT_FILENAME = "/home/egor/IdeaProjects/Com_grap_lab_1/src/input_output_files/african_head_";
     private static final long SEED = 5;
     private static final double MIN_VALUE = -1e18;
+    private static final double EPS = 5 * 1e-3;
 
 
     public static void draw(Model model) throws IOException {
@@ -176,14 +177,16 @@ public class Drawer {
             PointDouble p0 = model.getV(face.getVidx(0));
             PointDouble p1 = model.getV(face.getVidx(1));
             PointDouble p2 = model.getV(face.getVidx(2));
-            if (isBackface(p0, p1, p2, camera)) continue;
+            double lightFactor = getLightFactor(p0, p1, p2, camera);
+            if (lightFactor >= 0) continue;
 
-            int xmin = toInt(Math.min(p0.x, Math.min(p1.x, p2.x)), image.getWidth());
-            int xmax = toInt(Math.max(p0.x, Math.max(p1.x, p2.x)), image.getWidth());
-            int ymin = toInt(Math.min(p0.y, Math.min(p1.y, p2.y)), image.getHeight());
-            int ymax = toInt(Math.max(p0.y, Math.max(p1.y, p2.y)), image.getHeight());
+            int xmin = toInt(Math.min(p0.x - EPS, Math.min(p1.x - EPS, p2.x - EPS)), image.getWidth());
+            int xmax = toInt(Math.max(p0.x + EPS, Math.max(p1.x + EPS, p2.x + EPS)), image.getWidth());
+            int ymin = toInt(Math.min(p0.y - EPS, Math.min(p1.y - EPS, p2.y - EPS)), image.getHeight());
+            int ymax = toInt(Math.max(p0.y + EPS, Math.max(p1.y + EPS, p2.y + EPS)), image.getHeight());
 
-            Color color = new Color(rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
+            //Color color = new Color(rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
+            Color color = Color.LIGHT_GRAY;
             for (int yIdx = ymin; yIdx <= ymax; yIdx++) {
                 double y = center(yIdx, image.getHeight());
                 for (int xIdx = xmin; xIdx < xmax; xIdx++) {
@@ -192,7 +195,7 @@ public class Drawer {
                     if (inTriangle(l)) {
                         double z = p0.z * l[0] + p1.z * l[1] + p2.z * l[2];
                         if (z > bufferZ[xIdx][yIdx]) {
-                            image.setPixel(xIdx, yIdx, color);
+                            image.setPixel(xIdx, yIdx, getColorWithBrightness(color, -lightFactor));
                             bufferZ[xIdx][yIdx] = z;
                         }
                     }
@@ -219,11 +222,15 @@ public class Drawer {
         return (idx + .5) * 2 / length - 1;
     }
 
-    private static boolean isBackface(PointDouble p0, PointDouble p1, PointDouble p2, PointDouble camera) {
+    private static double getLightFactor(PointDouble p0, PointDouble p1, PointDouble p2, PointDouble camera) {
         double nx = (p2.y - p0.y) * (p1.z - p0.z) - (p2.z - p0.z) * (p1.y - p0.y);
         double ny = -(p2.x - p0.x) * (p1.z - p0.z) + (p2.z - p0.z) * (p1.x - p0.x);
         double nz = (p2.x - p0.x) * (p1.y - p0.y) - (p2.y - p0.y) * (p1.x - p0.x);
 
-        return nx * camera.x + ny * camera.y + nz * camera.z >= 0;
+        return (nx * camera.x + ny * camera.y + nz * camera.z) / norm(nx, ny, nz) / norm(camera.x, camera.y, camera.z);
+    }
+
+    private static double norm(double x, double y, double z) {
+        return Math.sqrt(x * x + y * y + z * z);
     }
 }
