@@ -11,13 +11,21 @@ public class TgaImage {
     private BufferedImage image;
     private String name;
 
-
     public TgaImage(String name) {
+        this(name, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+    }
+
+    public TgaImage(String name, int width, int height) {
         this.name = name + ".png";
-        this.image = new BufferedImage(DEFAULT_WIDTH, DEFAULT_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+        this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics graphics = image.getGraphics();
         graphics.setColor(Color.BLACK);
         graphics.fillRect(0, 0, image.getWidth(), image.getHeight());
+    }
+
+    public TgaImage(BufferedImage image, String name) {
+        this.image = image;
+        this.name = name + ".png";
     }
 
     private static BufferedImage createTransformed(BufferedImage image, AffineTransform at) {
@@ -33,6 +41,11 @@ public class TgaImage {
         image.setRGB(Math.max(0, Math.min(x, image.getWidth() - 1)),
                 Math.max(0, Math.min(y, image.getHeight() - 1)),
                 color.getRGB());
+    }
+
+    public int getColor(int x, int y) {
+        return image.getRGB(x, y);
+
     }
 
     public int getWidth() {

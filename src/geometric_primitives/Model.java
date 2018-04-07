@@ -17,7 +17,13 @@ public class Model {
         return faces;
     }
 
-    public PointDouble getV(int vidx) {
-        return v[vidx];
+    public PointDouble getV(int vIdx) {
+        return v[vIdx];
+    }
+
+    public PointDouble getVt(int vtIdx) {
+        return new PointDouble(vt[vtIdx].x * 2 - 1,
+                vt[vtIdx].y * 2 - 1,
+                vt[vtIdx].z * 2 - 1);
     }
 }

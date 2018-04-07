@@ -20,7 +20,11 @@ public class Face {
         this.vnIdx = vvIdx;
     }
 
-    public int getVidx(int index) {
+    public int getVIdx(int index) {
         return vIdx[index] - 1;
+    }
+
+    public int getVtIdx(int index) {
+        return vtIdx[index] - 1;
     }
 }

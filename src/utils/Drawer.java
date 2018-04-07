@@ -5,15 +5,13 @@ import geometric_primitives.Model;
 import geometric_primitives.PointDouble;
 import objects.TgaImage;
 
-import javax.imageio.ImageIO;
 import java.awt.*;
-import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 
 public class Drawer {
-    private static final String OUTPUT_FILENAME = "/home/egor/IdeaProjects/Com_grap_lab_1/src/input_output_files/african_head_";
+
     private static final long SEED = 5;
     private static final double MIN_VALUE = -1e18;
     private static final double EPS = 5 * 1e-3;
@@ -25,10 +23,10 @@ public class Drawer {
         TgaImage imageWu = new TgaImage("Wu");
         for (Face face : model.getFaces()) {
             for (int i = 0; i < 3; i++) {
-                PointDouble from = model.getV(face.getVidx(i));
+                PointDouble from = model.getV(face.getVIdx(i));
                 int x = toInt(from.x, imageDefault.getWidth());
                 int y = toInt(from.y, imageDefault.getHeight());
-                PointDouble to = model.getV(face.getVidx((i + 1) % 3));
+                PointDouble to = model.getV(face.getVIdx((i + 1) % 3));
                 int x1 = toInt(to.x, imageDefault.getWidth());
                 int y1 = toInt(to.y, imageDefault.getHeight());
                 drawLine(x, y, x1, y1, imageDefault, Color.GREEN);
@@ -36,24 +34,13 @@ public class Drawer {
                 drawLineWu(x, y, x1, y1, imageWu, Color.GREEN);
             }
         }
-        outputImage(imageDefault);
-        outputImage(imageBresenham);
-        outputImage(imageWu);
+        PictureIO.outputImage(imageDefault);
+        PictureIO.outputImage(imageBresenham);
+        PictureIO.outputImage(imageWu);
     }
 
     private static int toInt(double coordinate, int length) {
         return (int) Math.max(0, Math.min(length - 1, coordinate * length / 2 + length / 2));
-    }
-
-    private static void outputImage(TgaImage image) throws IOException {
-        long time = System.currentTimeMillis();
-        image.flipVertically();
-        writeImageToFile(image, OUTPUT_FILENAME + image.getName());
-        System.err.println(String.format("%s is drawn, time spent: %d ms", image.getName(), System.currentTimeMillis() - time));
-    }
-
-    private static void writeImageToFile(TgaImage image, String filename) throws IOException {
-        ImageIO.write(image.getImage(), "PNG", new File(filename));
     }
 
     public static void drawLine(int x0, int y0, int x1, int y1, TgaImage image, Color color) {
@@ -174,9 +161,9 @@ public class Drawer {
             Arrays.fill(bufferZ[i], MIN_VALUE);
         }
         for (Face face : model.getFaces()) {
-            PointDouble p0 = model.getV(face.getVidx(0));
-            PointDouble p1 = model.getV(face.getVidx(1));
-            PointDouble p2 = model.getV(face.getVidx(2));
+            PointDouble p0 = model.getV(face.getVIdx(0));
+            PointDouble p1 = model.getV(face.getVIdx(1));
+            PointDouble p2 = model.getV(face.getVIdx(2));
             double lightFactor = getLightFactor(p0, p1, p2, camera);
             if (lightFactor >= 0) continue;
 
@@ -193,7 +180,7 @@ public class Drawer {
                     double x = center(xIdx, image.getWidth());
                     double[] l = getBarysticCoordinates(x, y, p0, p1, p2);
                     if (inTriangle(l)) {
-                        double z = p0.z * l[0] + p1.z * l[1] + p2.z * l[2];
+                        double z = mult(p0.z, p1.z, p2.z, l);
                         if (z > bufferZ[xIdx][yIdx]) {
                             image.setPixel(xIdx, yIdx, getColorWithBrightness(color, -lightFactor));
                             bufferZ[xIdx][yIdx] = z;
@@ -203,7 +190,7 @@ public class Drawer {
             }
 
         }
-        outputImage(image);
+        PictureIO.outputImage(image);
     }
 
     private static boolean inTriangle(double[] l) {
@@ -232,5 +219,54 @@ public class Drawer {
 
     private static double norm(double x, double y, double z) {
         return Math.sqrt(x * x + y * y + z * z);
+    }
+
+    public static void drawWithTexture(Model model, PointDouble camera, TgaImage texture) throws IOException {
+        TgaImage image = new TgaImage("textured");
+        double[][] bufferZ = new double[image.getWidth()][image.getHeight()];
+        for (int i = 0; i < bufferZ.length; i++) {
+            Arrays.fill(bufferZ[i], MIN_VALUE);
+        }
+        for (Face face : model.getFaces()) {
+            PointDouble v0 = model.getV(face.getVIdx(0));
+            PointDouble v1 = model.getV(face.getVIdx(1));
+            PointDouble v2 = model.getV(face.getVIdx(2));
+            PointDouble vt0 = model.getVt(face.getVtIdx(0));
+            PointDouble vt1 = model.getVt(face.getVtIdx(1));
+            PointDouble vt2 = model.getVt(face.getVtIdx(2));
+            double lightFactor = getLightFactor(v0, v1, v2, camera);
+            if (lightFactor >= 0) continue;
+
+            int xmin = toInt(Math.min(v0.x - EPS, Math.min(v1.x - EPS, v2.x - EPS)), image.getWidth());
+            int xmax = toInt(Math.max(v0.x + EPS, Math.max(v1.x + EPS, v2.x + EPS)), image.getWidth());
+            int ymin = toInt(Math.min(v0.y - EPS, Math.min(v1.y - EPS, v2.y - EPS)), image.getHeight());
+            int ymax = toInt(Math.max(v0.y + EPS, Math.max(v1.y + EPS, v2.y + EPS)), image.getHeight());
+
+            for (int yIdx = ymin; yIdx <= ymax; yIdx++) {
+                double y = center(yIdx, image.getHeight());
+                for (int xIdx = xmin; xIdx < xmax; xIdx++) {
+                    double x = center(xIdx, image.getWidth());
+                    double[] l = getBarysticCoordinates(x, y, v0, v1, v2);
+                    if (inTriangle(l)) {
+                        double z = mult(v0.z, v1.z, v2.z, l);
+                        if (z > bufferZ[xIdx][yIdx]) {
+                            double xt = mult(vt0.x, vt1.x, vt2.x, l);
+                            double yt = mult(vt0.y, vt1.y, vt2.y, l);
+                            int textureIntX = toInt(xt, texture.getWidth());
+                            int textureIntY = toInt(yt, texture.getHeight());
+                            Color color = new Color(texture.getColor(textureIntX, textureIntY));
+                            image.setPixel(xIdx, yIdx, getColorWithBrightness(color, -lightFactor));
+                            bufferZ[xIdx][yIdx] = z;
+                        }
+                    }
+                }
+            }
+
+        }
+        PictureIO.outputImage(image);
+    }
+
+    private static double mult(double x0, double x1, double x2, double[] l) {
+        return x0 * l[0] + x1 * l[1] + x2 * l[2];
     }
 }
